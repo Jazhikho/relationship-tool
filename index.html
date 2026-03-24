@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relationship System v2</title>
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Relationship <span>System v2</span></h1>
+      <button id="runBenchmarkBtn" class="green">Benchmark</button>
+      <button id="exportBtn" class="secondary">Export</button>
+    </header>
+
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Characters (<span id="charCount">0</span>)</h2>
+        <div class="row">
+          <div><label>Name</label><input id="newCharName" placeholder="e.g. Kael"></div>
+          <button id="addCharBtn" class="compact">+</button>
+        </div>
+        <div class="row">
+          <div><label>Batch</label><input id="batchCount" type="number" value="10"></div>
+          <button id="batchAddBtn" class="secondary">Add</button>
+        </div>
+        <div class="char-list" id="charList"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Structural Tag</h2>
+        <div class="row">
+          <div><label>From</label><select id="relFrom"></select></div>
+          <div><label>To</label><select id="relTo"></select></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Type</label>
+            <select id="relType">
+              <option value="stranger">Stranger</option>
+              <option value="acquaintance">Acquaintance</option>
+              <option value="friend">Friend</option>
+              <option value="family">Family</option>
+              <option value="ally">Ally</option>
+              <option value="rival">Rival</option>
+              <option value="enemy">Enemy</option>
+            </select>
+          </div>
+          <button id="setRelTypeBtn" class="secondary compact-wide">Set</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Events</h2>
+        <div id="eventTemplates" class="event-template-list"></div>
+        <button id="customEventBtn" class="secondary">+ Custom</button>
+      </section>
+
+      <section class="panel">
+        <h2>Actions</h2>
+        <button id="tickBtn">Tick</button>
+        <button id="events10Btn" class="secondary">10 Random</button>
+        <button id="events50Btn" class="secondary">50 Random</button>
+        <button id="resetBtn" class="danger">Reset</button>
+      </section>
+    </aside>
+
+    <main class="main">
+      <div class="tabs">
+        <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="matrix">Matrix</button>
+        <button class="tab" data-tab="inspector">Inspector</button>
+        <button class="tab" data-tab="stable">Stable States</button>
+        <button class="tab" data-tab="log">Log</button>
+      </div>
+
+      <section id="tab-dashboard" class="tab-content active">
+        <div class="perf-grid" id="perfCards"></div>
+        <div class="panel">
+          <h2>Recent Events</h2>
+          <div class="log" id="eventLog"></div>
+        </div>
+      </section>
+
+      <section id="tab-matrix" class="tab-content">
+        <div class="panel">
+          <div class="row">
+            <div>
+              <label>Axis</label>
+              <select id="matrixAxis">
+                <option value="trust">Trust</option>
+                <option value="affection">Affection</option>
+                <option value="respect">Respect</option>
+                <option value="familiarity">Familiarity</option>
+              </select>
+            </div>
+            <div>
+              <label>Show</label>
+              <select id="matrixShow">
+                <option value="values">Values</option>
+                <option value="labels">Stable States</option>
+                <option value="types">Structural Tag</option>
+              </select>
+            </div>
+          </div>
+          <div id="matrixContainer" class="matrix-wrap"></div>
+        </div>
+      </section>
+
+      <section id="tab-inspector" class="tab-content">
+        <div class="panel">
+          <div class="row">
+            <div><label>Character</label><select id="inspChar"></select></div>
+            <div><label>Target</label><select id="inspTarget"></select></div>
+          </div>
+          <div id="inspectorContent"></div>
+        </div>
+      </section>
+
+      <section id="tab-log" class="tab-content">
+        <div class="panel">
+          <h2>Detailed Operation Log</h2>
+          <div class="log" id="detailLog"></div>
+        </div>
+        <div class="panel">
+          <h2>Benchmark Results</h2>
+          <div id="benchResults"><em>Run benchmark to see results.</em></div>
+        </div>
+      </section>
+
+      <section id="tab-stable" class="tab-content">
+        <div class="panel">
+          <h2>Stable State Definitions</h2>
+          <p class="hint">Relationships drift toward attractor states. Threshold and pattern combinations determine state transitions.</p>
+          <div id="stableStatesList"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="status-bar">
+      <span id="statusLeft">Ready</span>
+      <span id="statusRight">Pairs: 0 | Flags: 0</span>
+    </footer>
+  </div>
+  <div id="overlay">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <script type="module" src="./assets/js/main.js"></script>
+</body>
+</html>
