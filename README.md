@@ -1,4 +1,4 @@
-# Relationship System v2
+# Relationship System Overhead Sandbox
 
 A browser-based relationship simulation prototype with directional relationships, emotional stable states, structural tags, event-driven updates, memory flags, and social echo propagation.
 

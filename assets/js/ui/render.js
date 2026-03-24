@@ -1,5 +1,5 @@
 import { STATE, AXES, getCharName, getFlags, getRel } from "../core/state.js";
-import { computeStableStateId, EVENT_TEMPLATES, getPatternStatus, getStableStates } from "../core/engine.js";
+import { computeBondScore, computeStableStateId, ECO_EVENT_TEMPLATES, EVENT_TEMPLATES, getPatternStatus, getStableStates } from "../core/engine.js";
 
 /**
  * Computes average numeric value for dashboard summaries.
@@ -34,8 +34,11 @@ export function renderAll() {
   renderEventLog();
   renderDetailLog();
   renderEventTemplates();
+  renderEventConsoleTemplateOptions();
+  renderEventConsoleHelp();
   renderStableStates();
   renderBenchmarkResults();
+  renderRelationshipsGrid();
   renderMatrix();
   renderInspector();
   renderStatus();
@@ -89,7 +92,9 @@ export function renderPerfCards() {
   const familiarityVals = relValues.map((rel) => rel.familiarity);
   const events = STATE.perfLog.filter((entry) => entry.op === "event").map((entry) => entry.dt);
   const ticks = STATE.perfLog.filter((entry) => entry.op === "tick").map((entry) => entry.dt);
+  const richEvents = STATE.eventLogEntries.filter((entry) => entry.detail.includes("echoes "));
   const rawDbBytes = new TextEncoder().encode(JSON.stringify(STATE)).length;
+  const bondValues = relValues.map((rel) => computeBondScore(rel));
 
   const lastBench = STATE.lastBenchmark;
   let benchmarkTick = "—";
@@ -109,12 +114,21 @@ export function renderPerfCards() {
     { value: avg(affectionVals).toFixed(1), label: "Avg Affection" },
     { value: avg(respectVals).toFixed(1), label: "Avg Respect" },
     { value: avg(familiarityVals).toFixed(1), label: "Avg Familiarity" },
+    { value: avg(bondValues).toFixed(1), label: "Avg Bond Score" },
+    { value: richEvents.length, label: "Total Echo Events" },
+    { value: STATE.perfLog.length, label: "Perf Samples" },
     { value: formatBytes(rawDbBytes), label: "DB Storage" },
     { value: benchmarkEvent, label: "Bench Event" },
     { value: benchmarkTick, label: "Bench Tick" }
   ];
 
+  const eventPeak = Math.max(1, ...events);
+  const chartBars = events.slice(-20).map((value) => {
+    const width = Math.max(5, (value / eventPeak) * 100);
+    return `<div class="bar" style="width:${width}%"></div>`;
+  }).join("");
   cardEl.innerHTML = cards.map((card) => `<article class="perf-card"><div class="val">${card.value}</div><div class="lbl">${card.label}</div></article>`).join("");
+  cardEl.innerHTML += `<article class="perf-card" style="grid-column:1/-1"><div class="lbl">Event Timing History</div><div class="perf-chart">${chartBars || "<em>No samples</em>"}</div></article>`;
 }
 
 /**
@@ -150,6 +164,45 @@ export function renderEventTemplates() {
     return;
   }
   el.innerHTML = EVENT_TEMPLATES.map((tpl, index) => `<div class="event-tpl" data-template-index="${index}"><div class="name">${tpl.name}</div><div class="desc">${tpl.desc || "Template event"}</div></div>`).join("");
+}
+
+/**
+ * Renders event-console template selector options.
+ */
+export function renderEventConsoleTemplateOptions() {
+  const select = document.getElementById("eventConsoleTemplate");
+  if (!select) {
+    return;
+  }
+  const options = [];
+  let optionIndex = 0;
+  for (let index = 0; index < ECO_EVENT_TEMPLATES.length; index += 1) {
+    options.push(`<option value="${optionIndex}">${ECO_EVENT_TEMPLATES[index].name}</option>`);
+    optionIndex += 1;
+  }
+  for (let index = 0; index < EVENT_TEMPLATES.length; index += 1) {
+    options.push(`<option value="${optionIndex}">${EVENT_TEMPLATES[index].name}</option>`);
+    optionIndex += 1;
+  }
+  select.innerHTML = options.join("");
+}
+
+/**
+ * Renders quick help text for event console behavior.
+ */
+export function renderEventConsoleHelp() {
+  const help = document.getElementById("eventConsoleHelp");
+  if (!help) {
+    return;
+  }
+  help.innerHTML = [
+    `<strong>What this is:</strong> A live event sandbox for injecting custom events directly into the simulation.`,
+    `<strong>Templates available:</strong> ${ECO_EVENT_TEMPLATES.length + EVENT_TEMPLATES.length}. Load one as a starting point, then edit it.`,
+    "<strong>Yes, you can add new event types here:</strong> set a new value in `payload.type` (rich shape) or `name` (legacy shape), then push it.",
+    "<strong>What happens when you push:</strong> the JSON is executed immediately against current selected characters and updates axes, flags, scars, repair momentum, and optional social echo.",
+    "<strong>Supported shapes:</strong> 1) Rich `{ source, target, payload }` where `payload` supports `direct`, `reciprocal`, `echo`, `addFlags`, `removeFlags`, `visibilityImpact`, `scarDelta`, `repairMomentum`. 2) Legacy `{ name, source, effects:[{target,deltas}], flags:[...] }`.",
+    "<strong>Important:</strong> pushing JSON does not permanently register a template in the dropdown. It runs the event now. To make a reusable template, add it to `config.js`."
+  ].join("<br>");
 }
 
 /**
@@ -232,6 +285,17 @@ export function renderInspector() {
     const pct = ((value + 100) / 200) * 100;
     html += `<label>${axis}: ${value.toFixed(1)}</label><div class="axis-bar"><div class="fill" style="width:${pct}%;background:${colors[axis]}"></div></div>`;
   }
+  const extraMetrics = [
+    { key: "closeness", label: "Closeness" },
+    { key: "commitment", label: "Commitment" },
+    { key: "visibility", label: "Visibility" },
+    { key: "scars", label: "Scars" },
+    { key: "repairMomentum", label: "Repair Momentum" }
+  ];
+  html += "<h3>Extended Metrics</h3>";
+  for (const row of extraMetrics) {
+    html += `<p>${row.label}: ${Number(rel[row.key]).toFixed(1)}</p>`;
+  }
 
   html += `<h3>Flags (${flags.length})</h3>`;
   html += flags.map((flag) => `<span class="flag-chip ${flag.sentiment}">${flag.tag} ttl:${Math.max(0, flag.decay - (STATE.tickCount - flag.tick))}</span>`).join("") || "<p>None</p>";
@@ -248,7 +312,33 @@ export function renderInspector() {
   html += `<p>${patternText.join(" | ")}</p>`;
   html += `<h3>Reverse Snapshot</h3>`;
   html += `<p>${getCharName(targetId)} -> ${getCharName(charId)} | ${reverse.structuralTag} | ${reverse.emotionalLabel}</p>`;
+  if (Array.isArray(rel.history) && rel.history.length > 0) {
+    html += "<h3>Recent History</h3>";
+    const items = rel.history.slice(-5).map((entry) => `${entry.kind} @ ${new Date(entry.timestamp).toLocaleTimeString()}`);
+    html += `<p>${items.join(" | ")}</p>`;
+  }
   el.innerHTML = html;
+}
+
+/**
+ * Renders directional relationship cards for browsing.
+ */
+export function renderRelationshipsGrid() {
+  const container = document.getElementById("relationshipsGrid");
+  if (!container) {
+    return;
+  }
+  const entries = Object.entries(STATE.rels).slice(0, 120);
+  if (entries.length === 0) {
+    container.innerHTML = "<em>No relationships yet.</em>";
+    return;
+  }
+  container.innerHTML = entries.map(([key, rel]) => {
+    const parts = key.split("->");
+    const fromName = getCharName(parts[0]);
+    const toName = getCharName(parts[1]);
+    return `<div class="rel-card"><div class="title">${fromName} -> ${toName}</div><div class="meta">${rel.structuralTag} | ${rel.emotionalLabel}</div><div class="meta">bond ${computeBondScore(rel)} | close ${rel.closeness.toFixed(0)} | scars ${rel.scars.toFixed(0)}</div></div>`;
+  }).join("");
 }
 
 /**

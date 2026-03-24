@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relationship System v2</title>
+  <title>Relationship System Overhead Sandbox</title>
   <link rel="stylesheet" href="./assets/css/styles.css">
 </head>
 <body>
   <div class="app">
     <header>
-      <h1>Relationship <span>System v2</span></h1>
+      <h1>Relationship System <span>Overhead Sandbox</span></h1>
       <button id="runBenchmarkBtn" class="green">Benchmark</button>
       <button id="exportBtn" class="secondary">Export</button>
     </header>
@@ -45,9 +45,36 @@
               <option value="ally">Ally</option>
               <option value="rival">Rival</option>
               <option value="enemy">Enemy</option>
+              <option value="close_friend">Close Friend</option>
+              <option value="best_friend">Best Friend</option>
+              <option value="parent_child">Parent/Child</option>
+              <option value="siblings">Siblings</option>
+              <option value="romantic">Romantic</option>
+              <option value="ex_romantic">Ex-Romantic</option>
+              <option value="mentor_student">Mentor/Student</option>
+              <option value="coworker">Coworker</option>
             </select>
           </div>
           <button id="setRelTypeBtn" class="secondary compact-wide">Set</button>
+        </div>
+        <div class="row">
+          <div>
+            <label>Preset Apply</label>
+            <select id="presetNature">
+              <option value="acquaintance">Acquaintance</option>
+              <option value="friend">Friend</option>
+              <option value="close_friend">Close Friend</option>
+              <option value="best_friend">Best Friend</option>
+              <option value="family">Family</option>
+              <option value="parent_child">Parent/Child</option>
+              <option value="siblings">Siblings</option>
+              <option value="romantic">Romantic</option>
+              <option value="ex_romantic">Ex-Romantic</option>
+              <option value="mentor_student">Mentor/Student</option>
+              <option value="coworker">Coworker</option>
+            </select>
+          </div>
+          <button id="applyPresetBtn" class="secondary compact-wide">Apply</button>
         </div>
       </section>
 
@@ -62,6 +89,8 @@
         <button id="tickBtn">Tick</button>
         <button id="events10Btn" class="secondary">10 Random</button>
         <button id="events50Btn" class="secondary">50 Random</button>
+        <button id="seedScenarioBtn" class="secondary">Seed Scenario</button>
+        <button id="socialWaveBtn" class="secondary">Social Echo Demo</button>
         <button id="resetBtn" class="danger">Reset</button>
       </section>
     </aside>
@@ -69,8 +98,10 @@
     <main class="main">
       <div class="tabs">
         <button class="tab active" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="relationships">Relationships</button>
         <button class="tab" data-tab="matrix">Matrix</button>
         <button class="tab" data-tab="inspector">Inspector</button>
+        <button class="tab" data-tab="event-console">Event Console</button>
         <button class="tab" data-tab="stable">Stable States</button>
         <button class="tab" data-tab="log">Log</button>
       </div>
@@ -108,6 +139,13 @@
         </div>
       </section>
 
+      <section id="tab-relationships" class="tab-content">
+        <div class="panel">
+          <h2>Relationship Cards</h2>
+          <div id="relationshipsGrid" class="relationships-grid"></div>
+        </div>
+      </section>
+
       <section id="tab-inspector" class="tab-content">
         <div class="panel">
           <div class="row">
@@ -126,6 +164,21 @@
         <div class="panel">
           <h2>Benchmark Results</h2>
           <div id="benchResults"><em>Run benchmark to see results.</em></div>
+        </div>
+      </section>
+
+      <section id="tab-event-console" class="tab-content">
+        <div class="panel">
+          <h2>Event Console</h2>
+          <label>Template</label>
+          <select id="eventConsoleTemplate"></select>
+          <label style="margin-top:8px">Event JSON</label>
+          <textarea id="eventConsoleJson" class="event-json"></textarea>
+          <div class="row" style="margin-top:8px">
+            <button id="loadConsoleTemplateBtn" class="secondary">Load Template</button>
+            <button id="pushConsoleEventBtn" class="green">Push JSON Event</button>
+          </div>
+          <div id="eventConsoleHelp" class="hint" style="margin-top:8px"></div>
         </div>
       </section>
 

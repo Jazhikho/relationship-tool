@@ -1,4 +1,5 @@
 export const AXES = ["trust", "affection", "respect", "familiarity"];
+export const EXTENDED_AXES = ["trust", "affection", "respect", "familiarity", "closeness", "commitment", "visibility"];
 
 export const STATE = {
   chars: [],
@@ -38,10 +39,17 @@ export function getRel(a, b) {
       affection: 0,
       respect: 0,
       familiarity: 0,
+      closeness: 0,
+      commitment: 0,
+      visibility: 0,
+      scars: 0,
+      repairMomentum: 0,
       emotionalLabel: "stranger",
       structuralTag: "stranger",
       isStructuralLocked: false,
-      patternApplied: {}
+      patternApplied: {},
+      history: [],
+      eventLedger: {}
     };
   }
   return STATE.rels[key];

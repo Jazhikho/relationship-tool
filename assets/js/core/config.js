@@ -81,3 +81,69 @@ export const EVENT_TEMPLATES = [
   { name: "Gift Given", desc: "Meaningful gift raises affection.", build: (s, t) => ({ name: "Gift Given", source: s, effects: [{ target: t, deltas: { affection: 15, trust: 3 } }], flags: [{ perceiver: t, about: s, tag: "kindness", sentiment: "positive", decay: 12 }] }) },
   { name: "Deep Conversation", desc: "Meaningful talk builds familiarity.", build: (s, t) => ({ name: "Deep Conversation", source: s, effects: [{ target: t, deltas: { familiarity: 10, trust: 4, affection: 5 } }], flags: [{ perceiver: t, about: s, tag: "engaged", sentiment: "positive", decay: 12 }] }) }
 ];
+
+export const NATURE_PROFILES = {
+  stranger: { trust: 45, affection: 10, respect: 40, familiarity: 5, closeness: 5, commitment: 0, visibility: 5 },
+  acquaintance: { trust: 50, affection: 20, respect: 45, familiarity: 25, closeness: 20, commitment: 10, visibility: 20 },
+  friend: { trust: 62, affection: 58, respect: 55, familiarity: 55, closeness: 58, commitment: 35, visibility: 40 },
+  close_friend: { trust: 76, affection: 72, respect: 62, familiarity: 78, closeness: 76, commitment: 55, visibility: 55 },
+  best_friend: { trust: 86, affection: 84, respect: 70, familiarity: 90, closeness: 90, commitment: 70, visibility: 65 },
+  family: { trust: 65, affection: 65, respect: 55, familiarity: 80, closeness: 72, commitment: 78, visibility: 70 },
+  parent_child: { trust: 72, affection: 78, respect: 62, familiarity: 85, closeness: 82, commitment: 90, visibility: 72 },
+  siblings: { trust: 67, affection: 62, respect: 50, familiarity: 86, closeness: 75, commitment: 76, visibility: 72 },
+  romantic: { trust: 78, affection: 86, respect: 60, familiarity: 72, closeness: 88, commitment: 85, visibility: 75 },
+  ex_romantic: { trust: 35, affection: 28, respect: 42, familiarity: 80, closeness: 45, commitment: 18, visibility: 68 },
+  mentor_student: { trust: 68, affection: 35, respect: 80, familiarity: 50, closeness: 48, commitment: 60, visibility: 35 },
+  coworker: { trust: 52, affection: 25, respect: 55, familiarity: 40, closeness: 28, commitment: 25, visibility: 45 },
+  rival: { trust: 35, affection: 15, respect: 65, familiarity: 58, closeness: 35, commitment: 38, visibility: 55 },
+  enemy: { trust: 8, affection: 0, respect: 22, familiarity: 45, closeness: 20, commitment: 40, visibility: 65 },
+  ally: { trust: 62, affection: 34, respect: 66, familiarity: 48, closeness: 45, commitment: 52, visibility: 42 }
+};
+
+export const ECO_EVENT_TEMPLATES = [
+  {
+    name: "Shared Triumph",
+    description: "A success together strengthens direct and social ties.",
+    data: {
+      type: "shared_triumph",
+      direct: { trust: 10, affection: 8, respect: 9, familiarity: 3, closeness: 6 },
+      reciprocal: { trust: 6, affection: 5, respect: 5, closeness: 3 },
+      addFlags: ["shared_victory"],
+      removeFlags: [],
+      echo: { enabled: true, baseScale: 0.30, mode: "reputation_positive" },
+      visibilityImpact: 8,
+      scarDelta: 0,
+      repairMomentum: 4
+    }
+  },
+  {
+    name: "Betrayal Exposed",
+    description: "Trust breaks and fallout propagates across social neighbors.",
+    data: {
+      type: "betrayal_exposed",
+      direct: { trust: -28, affection: -16, respect: -20, closeness: -18 },
+      reciprocal: { trust: -8, respect: -6 },
+      addFlags: ["betrayed", "trust_broken"],
+      removeFlags: [],
+      echo: { enabled: true, baseScale: 0.45, mode: "reputation_negative" },
+      visibilityImpact: 18,
+      scarDelta: 16,
+      repairMomentum: -12
+    }
+  },
+  {
+    name: "Honest Apology",
+    description: "Repair-oriented move that can transition to cautious repair.",
+    data: {
+      type: "honest_apology",
+      direct: { trust: 10, affection: 4, respect: 8, closeness: 3 },
+      reciprocal: { respect: 4 },
+      addFlags: ["apology_offered"],
+      removeFlags: ["stonewalling"],
+      echo: { enabled: true, baseScale: 0.18, mode: "repair_signal" },
+      visibilityImpact: 6,
+      scarDelta: -2,
+      repairMomentum: 16
+    }
+  }
+];

@@ -1,6 +1,7 @@
-import { AXES, STATE, clamp, getFlags, getRel, getCharName } from "./state.js";
-import { ECHO_MULT, EVENT_TEMPLATES, PATTERNS, STABLE_STATE_ORDER, STABLE_STATES, STATE_TO_TYPE, STRUCTURAL_RANK } from "./config.js";
+import { AXES, EXTENDED_AXES, STATE, clamp, getFlags, getRel, getCharName } from "./state.js";
+import { ECO_EVENT_TEMPLATES, ECHO_MULT, EVENT_TEMPLATES, NATURE_PROFILES, PATTERNS, STABLE_STATE_ORDER, STABLE_STATES, STATE_TO_TYPE, STRUCTURAL_RANK } from "./config.js";
 export { EVENT_TEMPLATES };
+export { ECO_EVENT_TEMPLATES };
 
 /**
  * Computes the dominant emotional state for a directional relationship.
@@ -251,6 +252,27 @@ export function setStructuralTag(a, b, tag) {
 }
 
 /**
+ * Applies expanded relationship preset profile with optional overrides.
+ */
+export function applyRelationshipPreset(a, b, nature, overrides = {}) {
+  const rel = getRel(a, b);
+  const profile = NATURE_PROFILES[nature] || NATURE_PROFILES.stranger;
+  rel.structuralTag = nature;
+  for (const axis of EXTENDED_AXES) {
+    if (Object.prototype.hasOwnProperty.call(profile, axis)) {
+      rel[axis] = profile[axis];
+    }
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    if (Object.prototype.hasOwnProperty.call(rel, key)) {
+      rel[key] = clamp(value, 0, 100);
+    }
+  }
+  rel.emotionalLabel = computeEmotionalLabel(rel);
+  return rel;
+}
+
+/**
  * Applies axis deltas to a directed relationship with clamping.
  */
 function modRel(a, b, deltas) {
@@ -260,6 +282,36 @@ function modRel(a, b, deltas) {
       rel[axis] = clamp(rel[axis] + deltas[axis]);
     }
   }
+}
+
+/**
+ * Applies axis deltas across the extended relationship model.
+ */
+function modRelExtended(a, b, deltas, scalar = 1) {
+  const rel = getRel(a, b);
+  for (const axis of EXTENDED_AXES) {
+    if (Object.prototype.hasOwnProperty.call(deltas, axis)) {
+      rel[axis] = clamp(rel[axis] + (deltas[axis] * scalar), 0, 100);
+    }
+  }
+}
+
+/**
+ * Appends bounded history records to relationship timeline.
+ */
+function pushRelHistory(rel, entry) {
+  rel.history.push(entry);
+  if (rel.history.length > 50) {
+    rel.history.shift();
+  }
+}
+
+/**
+ * Computes aggregate bond score for directional relationship.
+ */
+export function computeBondScore(rel) {
+  const total = rel.trust + rel.affection + rel.respect + rel.familiarity + rel.closeness + rel.commitment;
+  return Math.round(total / 6);
 }
 
 /**
@@ -339,6 +391,104 @@ export function pushEvent(evt) {
 }
 
 /**
+ * Processes richer ecology-style event payloads with reciprocal and echo paths.
+ */
+export function processRichEvent(source, target, payload) {
+  const start = performance.now();
+  if (!source || !target || source === target) {
+    return null;
+  }
+
+  const rel = getRel(source, target);
+  const eventId = `evt_${STATE.eventCount + 1}_${Math.random().toString(36).slice(2, 8)}`;
+  if (rel.eventLedger[eventId]) {
+    return null;
+  }
+  rel.eventLedger[eventId] = true;
+
+  if (payload.direct) {
+    modRelExtended(source, target, payload.direct, 1);
+  }
+  if (typeof payload.visibilityImpact === "number") {
+    modRelExtended(source, target, { visibility: payload.visibilityImpact }, 1);
+  }
+  if (typeof payload.scarDelta === "number") {
+    rel.scars = clamp(rel.scars + payload.scarDelta, 0, 100);
+  }
+  if (typeof payload.repairMomentum === "number") {
+    rel.repairMomentum = clamp(rel.repairMomentum + payload.repairMomentum, -100, 100);
+  }
+  if (Array.isArray(payload.addFlags)) {
+    for (const tag of payload.addFlags) {
+      addFlag(target, source, tag, "neutral", 30);
+    }
+  }
+  if (Array.isArray(payload.removeFlags)) {
+    const key = `${target}->${source}`;
+    const kept = [];
+    for (const flag of getFlags(target, source)) {
+      if (!payload.removeFlags.includes(flag.tag)) {
+        kept.push(flag);
+      }
+    }
+    STATE.flags[key] = kept;
+  }
+  pushRelHistory(rel, { kind: "event", source, target, payload, timestamp: Date.now() });
+
+  if (payload.reciprocal) {
+    const reverse = getRel(target, source);
+    const reverseId = `${eventId}_reverse`;
+    if (!reverse.eventLedger[reverseId]) {
+      reverse.eventLedger[reverseId] = true;
+      modRelExtended(target, source, payload.reciprocal, 1);
+      pushRelHistory(reverse, { kind: "reciprocal", source: target, target: source, payload: payload.reciprocal, timestamp: Date.now() });
+    }
+  }
+
+  let echoCount = 0;
+  if (payload.echo && payload.echo.enabled) {
+    for (const observer of STATE.chars) {
+      if (observer.id === source || observer.id === target) {
+        continue;
+      }
+      const observerRel = getRel(observer.id, target);
+      const closeness = (observerRel.closeness + observerRel.trust + observerRel.familiarity) / 300;
+      if (Math.abs(closeness) < 0.1) {
+        continue;
+      }
+      const scalar = closeness * (payload.echo.baseScale || 0.2);
+      if (Math.abs(scalar) < 0.02) {
+        continue;
+      }
+      if (payload.echo.mode === "reputation_negative") {
+        modRelExtended(observer.id, source, { trust: -10, respect: -12, affection: -4, closeness: -3 }, scalar);
+      } else if (payload.echo.mode === "reputation_positive") {
+        modRelExtended(observer.id, source, { trust: 6, respect: 8, affection: 3, closeness: 2 }, scalar);
+      } else if (payload.echo.mode === "repair_signal") {
+        modRelExtended(observer.id, source, { trust: 3, respect: 4 }, scalar);
+      } else {
+        modRelExtended(observer.id, source, { trust: -4, respect: -4 }, scalar);
+      }
+      pushRelHistory(getRel(observer.id, source), { kind: "echo", source: observer.id, target: source, scalar, timestamp: Date.now() });
+      echoCount += 1;
+    }
+  }
+
+  for (const key of Object.keys(STATE.rels)) {
+    const [a, b] = key.split("->");
+    enforceFamilySymmetry(a, b);
+    STATE.rels[key].emotionalLabel = computeEmotionalLabel(STATE.rels[key]);
+    applyStructuralReality(a, b);
+  }
+
+  STATE.eventCount += 1;
+  const elapsed = performance.now() - start;
+  logEvent(payload.type || "rich_event", `${getCharName(source)} -> ${getCharName(target)} | ${elapsed.toFixed(3)}ms | echoes ${echoCount}`);
+  logPerf("event", elapsed);
+  return { elapsed, echoes: echoCount };
+}
+
+/**
  * Advances one simulation tick: flag decay, pattern checks, drift, transitions.
  */
 export function tick() {
@@ -361,6 +511,20 @@ export function tick() {
     }
     rel.emotionalLabel = computeEmotionalLabel(rel);
     driftTowardStableState(rel);
+    if (rel.familiarity > 10) {
+      rel.familiarity = clamp(rel.familiarity - 0.12, 0, 100);
+    }
+    if (rel.closeness > 5) {
+      rel.closeness = clamp(rel.closeness - 0.05, 0, 100);
+    }
+    if (rel.repairMomentum > 0) {
+      rel.repairMomentum = clamp(rel.repairMomentum - 1.2, -100, 100);
+    } else if (rel.repairMomentum < 0) {
+      rel.repairMomentum = clamp(rel.repairMomentum + 0.4, -100, 100);
+    }
+    if (rel.scars > 0 && rel.repairMomentum > 12) {
+      rel.scars = clamp(rel.scars - 0.35, 0, 100);
+    }
     applyStructuralReality(a, b);
     if (beforeState !== rel.emotionalLabel) {
       logDetail(`[${getCharName(a)}->${getCharName(b)}] Emotional: ${beforeState} -> ${rel.emotionalLabel}`);

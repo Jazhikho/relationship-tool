@@ -90,6 +90,16 @@ input, select, button {
   font-size: 12px;
   padding: 6px 8px;
 }
+textarea {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  padding: 6px 8px;
+  resize: vertical;
+}
 button {
   cursor: pointer;
   background: var(--accent);
@@ -130,6 +140,16 @@ button.compact-wide { max-width: 60px; }
 }
 .perf-card .val { font-size: 16px; font-weight: 700; }
 .perf-card .lbl { color: var(--dim); font-size: 10px; margin-top: 2px; }
+.perf-chart {
+  margin-top: 8px;
+  display: grid;
+  gap: 3px;
+}
+.perf-chart .bar {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
 
 .char-list { display: flex; flex-direction: column; gap: 3px; max-height: 190px; overflow-y: auto; }
 .char-item {
@@ -190,6 +210,31 @@ button.compact-wide { max-width: 60px; }
 .event-tpl:hover { border-color: var(--accent); }
 .event-tpl .name { font-size: 12px; font-weight: 600; }
 .event-tpl .desc { font-size: 10px; color: var(--dim); }
+
+.relationships-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.rel-card {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 8px;
+}
+.rel-card .title {
+  font-weight: 600;
+  font-size: 11px;
+}
+.rel-card .meta {
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.event-json {
+  min-height: 220px;
+  font-family: Consolas, monospace;
+}
 
 #overlay {
   display: none;
