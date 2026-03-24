@@ -37,6 +37,10 @@ Then navigate to:
 - `assets/js/ui/actions.js`: UI actions and event wiring
 - `assets/js/main.js`: bootstrap entrypoint
 
+## Asset Attribution
+
+- `handshake.png`: <a href="https://www.flaticon.com/free-icons/community-engagement" title="community-engagement icons">Community-engagement icons created by Uniconlabs - Flaticon</a>
+
 ## License
 
 MIT. See `LICENSE`.
